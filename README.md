@@ -112,16 +112,9 @@ You can add more tests in `tests/test_recommender.py`.
 
 ## Sample Recommendation Output
 
-Running `python -m src.main` with the default profile (genre=pop, mood=happy, energy=0.8) produces the following:
+An example run for a single profile (genre=pop, mood=happy, energy=0.8) looks like this:
 
 ```
-Loaded songs: 18
-
-====================================================
-  Top Recommendations
-  Profile: genre=pop, mood=happy, energy=0.8
-====================================================
-
   1. Sunrise City  by Neon Echo
      Score: 4.47
      Reasons: genre match (+2.0), mood match (+1.0), energy close to target (+1.47)
@@ -143,17 +136,195 @@ Loaded songs: 18
      Reasons: energy close to target (+1.33)
 ```
 
-The top result, Sunrise City, is the only song that matches the profile on genre, mood, and energy at once, so it correctly earns the highest score.
+The top result, Sunrise City, is the only song that matches the profile on genre, mood, and energy at once, so it correctly earns the highest score. Running `python -m src.main` now prints a full suite of profiles, shown in the next section.
+
+---
+
+## Stress Test: Diverse and Adversarial Profiles
+
+To evaluate the scoring logic, `src/main.py` runs six profiles: three normal listener archetypes and three adversarial edge cases designed to see if the scoring can be tricked. Each block below is real terminal output from `python -m src.main`.
+
+### Normal archetypes
+
+**High-Energy Pop** (genre=pop, mood=happy, energy=0.9, likes_acoustic=False)
+
+```
+  1. Sunrise City  by Neon Echo
+     Score: 4.88
+     Reasons: genre match (+2.0), mood match (+1.0), energy close to target (+1.38), not acoustic, as preferred (+0.5)
+
+  2. Gym Hero  by Max Pulse
+     Score: 3.96
+     Reasons: genre match (+2.0), energy close to target (+1.46), not acoustic, as preferred (+0.5)
+
+  3. Rooftop Lights  by Indigo Parade
+     Score: 2.79
+     Reasons: mood match (+1.0), energy close to target (+1.29), not acoustic, as preferred (+0.5)
+
+  4. Storm Runner  by Voltline
+     Score: 1.98
+     Reasons: energy close to target (+1.48), not acoustic, as preferred (+0.5)
+
+  5. Pulse Reactor  by Kilowatt
+     Score: 1.93
+     Reasons: energy close to target (+1.43), not acoustic, as preferred (+0.5)
+```
+
+**Chill Lofi** (genre=lofi, mood=chill, energy=0.35, likes_acoustic=True)
+
+```
+  1. Library Rain  by Paper Lanterns
+     Score: 5.00
+     Reasons: genre match (+2.0), mood match (+1.0), energy close to target (+1.50), acoustic, as preferred (+0.5)
+
+  2. Midnight Coding  by LoRoom
+     Score: 4.89
+     Reasons: genre match (+2.0), mood match (+1.0), energy close to target (+1.40), acoustic, as preferred (+0.5)
+
+  3. Focus Flow  by LoRoom
+     Score: 3.92
+     Reasons: genre match (+2.0), energy close to target (+1.42), acoustic, as preferred (+0.5)
+
+  4. Spacewalk Thoughts  by Orbit Bloom
+     Score: 2.90
+     Reasons: mood match (+1.0), energy close to target (+1.40), acoustic, as preferred (+0.5)
+
+  5. Coffee Shop Stories  by Slow Stereo
+     Score: 1.97
+     Reasons: energy close to target (+1.47), acoustic, as preferred (+0.5)
+```
+
+**Deep Intense Rock** (genre=rock, mood=intense, energy=0.9, likes_acoustic=False)
+
+```
+  1. Storm Runner  by Voltline
+     Score: 4.98
+     Reasons: genre match (+2.0), mood match (+1.0), energy close to target (+1.48), not acoustic, as preferred (+0.5)
+
+  2. Gym Hero  by Max Pulse
+     Score: 2.96
+     Reasons: mood match (+1.0), energy close to target (+1.46), not acoustic, as preferred (+0.5)
+
+  3. Pulse Reactor  by Kilowatt
+     Score: 1.93
+     Reasons: energy close to target (+1.43), not acoustic, as preferred (+0.5)
+
+  4. Iron Verdict  by Bleak Meridian
+     Score: 1.90
+     Reasons: energy close to target (+1.40), not acoustic, as preferred (+0.5)
+
+  5. Sunrise City  by Neon Echo
+     Score: 1.88
+     Reasons: energy close to target (+1.38), not acoustic, as preferred (+0.5)
+```
+
+### Adversarial / edge cases
+
+**Contradictory, energetic but sad** (genre=ambient, mood=sad, energy=0.9, likes_acoustic=True). The mood "sad" is not in the catalog, so it can never match, and a high energy target fights the calm ambient genre.
+
+```
+  1. Spacewalk Thoughts  by Orbit Bloom
+     Score: 3.07
+     Reasons: genre match (+2.0), energy close to target (+0.57), acoustic, as preferred (+0.5)
+
+  2. Storm Runner  by Voltline
+     Score: 1.48
+     Reasons: energy close to target (+1.48)
+
+  3. Gym Hero  by Max Pulse
+     Score: 1.46
+     Reasons: energy close to target (+1.46)
+
+  4. Dust and Diesel  by Old Route 9
+     Score: 1.43
+     Reasons: energy close to target (+0.93), acoustic, as preferred (+0.5)
+
+  5. Pulse Reactor  by Kilowatt
+     Score: 1.43
+     Reasons: energy close to target (+1.43)
+```
+
+Observation: the genre bonus alone lifts a calm ambient track to the top even though it badly misses the requested energy, while the actually high-energy songs the user asked for rank below it. This shows genre can outweigh a strong numeric mismatch.
+
+**Unknown genre** (genre=kpop, mood=happy, energy=0.6, likes_acoustic=False). No song has genre "kpop", so the genre rule never fires and ranking falls back to mood and energy.
+
+```
+  1. Rooftop Lights  by Indigo Parade
+     Score: 2.76
+     Reasons: mood match (+1.0), energy close to target (+1.26), not acoustic, as preferred (+0.5)
+
+  2. Sunrise City  by Neon Echo
+     Score: 2.67
+     Reasons: mood match (+1.0), energy close to target (+1.17), not acoustic, as preferred (+0.5)
+
+  3. Island Time  by Sunset Groove
+     Score: 1.93
+     Reasons: energy close to target (+1.43), not acoustic, as preferred (+0.5)
+
+  4. Concrete Poetry  by Verse Machine
+     Score: 1.88
+     Reasons: energy close to target (+1.38), not acoustic, as preferred (+0.5)
+
+  5. Night Drive Loop  by Neon Echo
+     Score: 1.77
+     Reasons: energy close to target (+1.27), not acoustic, as preferred (+0.5)
+```
+
+Observation: the system degrades gracefully instead of failing. It still returns sensible results by leaning on mood and energy, though every score is capped lower because the 2.0 genre point is unreachable.
+
+**Sparse profile, energy only** (energy=0.5, no genre or mood).
+
+```
+  1. Dust and Diesel  by Old Route 9
+     Score: 1.47
+     Reasons: energy close to target (+1.47)
+
+  2. Island Time  by Sunset Groove
+     Score: 1.42
+     Reasons: energy close to target (+1.42)
+
+  3. Letters Unsent  by Ava Hollow
+     Score: 1.41
+     Reasons: energy close to target (+1.41)
+
+  4. Midnight Coding  by LoRoom
+     Score: 1.38
+     Reasons: energy close to target (+1.38)
+
+  5. Focus Flow  by LoRoom
+     Score: 1.35
+     Reasons: energy close to target (+1.35)
+```
+
+Observation: with only an energy target, every song is judged on that single axis, so the top results are a genre grab bag that happen to sit near energy 0.5. This confirms the profile needs categorical preferences to produce focused recommendations.
+
+### What the stress test revealed
+
+- Genre weight can dominate. In the contradictory profile, one genre match outranked songs that fit the requested energy far better. If genre feels too strong, lower its weight or add a penalty for large numeric mismatches.
+- Exact matching is brittle. A mood or genre value that is not in the catalog silently contributes nothing, with no warning to the user.
+- The system fails safe. Unknown or sparse profiles still return ranked results rather than crashing, which is good, but the scores are not comparable across profiles because the reachable maximum changes.
 
 ---
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+### Experiment 1: Weight shift, double energy and halve genre
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+I temporarily changed the scoring weights in `score_song` to test how sensitive the rankings are to the balance between a categorical feature and a numeric one.
+
+- Genre match, from +2.0 down to +1.0.
+- Energy closeness, from up to +1.5 up to +3.0.
+
+Math check: the new maximum score is 1.0 (genre) + 1.0 (mood) + 3.0 (energy) + 0.5 (acoustic) = 5.5, and energy stays bounded between 0 and 3.0 because the closeness factor (1 minus distance) is always between 0 and 1. The math stayed valid, no negative or runaway scores.
+
+What changed:
+
+- For the three normal profiles, the number 1 pick did not change. High-Energy Pop still led with Sunrise City, Chill Lofi with Library Rain, Deep Intense Rock with Storm Runner. Those profiles are internally consistent, their genre, mood, and energy all point at the same song, so shifting weight between the rules could not dislodge the winner. The scores did compress and a few mid list positions swapped.
+- The Contradictory profile (genre=ambient, mood=sad, energy=0.9) flipped completely. Under the original weights the top pick was Spacewalk Thoughts, a calm ambient song that won purely on the genre bonus while ignoring the requested high energy. Under the experiment, the genre bonus was no longer big enough to overcome the energy gap, so Spacewalk Thoughts fell out of the top 5 entirely and the high energy songs the user actually asked for (Storm Runner, Gym Hero, Pulse Reactor) rose to the top.
+
+Was it more accurate or just different? For the everyday profiles it was just different, a reshuffle with the same winners. For the adversarial case it was genuinely more accurate, because it fixed the exact failure the stress test exposed, where a single genre match could outrank a strong numeric preference. The tradeoff is that leaning this hard on energy makes the recommender more of an energy matcher and less of a taste matcher, so two songs of very different styles but similar energy start to look interchangeable.
+
+Decision: I reverted to the finalized weights (genre 2.0, energy up to 1.5) to keep genre as the primary taste signal, but this experiment is good evidence that a middle ground, for example genre 1.5 and energy 2.0, or adding a penalty for large numeric mismatches, would make the system more robust to contradictory profiles.
 
 ---
 
