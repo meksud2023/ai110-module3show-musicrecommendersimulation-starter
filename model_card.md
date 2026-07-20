@@ -2,60 +2,60 @@
 
 ## 1. Model Name  
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
+**VibeMatch 1.0**
+
+It matches songs to a listener's vibe. The name is meant to be simple and fun.
 
 ---
 
 ## 2. Intended Use  
 
-Describe what your recommender is designed to do and who it is for. 
+VibeMatch tries to suggest songs a listener will like. It takes a short taste profile and returns a ranked list of songs that fit it. It also gives a short reason for each pick, so the choice is easy to understand.
 
-Prompts:  
+It assumes the user can name a favorite genre, a favorite mood, and an energy level. It works on a tiny catalog of 18 songs.
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**Intended use:** this is a classroom project. It is for learning how a simple recommender turns data into ranked suggestions.
+
+**Not intended use:** it is not for real music apps or real users. It should not be used to make important choices about people or to judge music quality. The catalog is too small and the rules are too simple for that.
 
 ---
 
 ## 3. How the Model Works  
 
-Explain your scoring approach in simple language.  
+The model gives each song a score, then sorts the songs from highest to lowest. The top few become the recommendations.
 
-Prompts:  
+To score a song, it compares the song to the user's profile and adds points for good matches.
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
+- Same genre as the user likes, add 2 points.
+- Same mood as the user likes, add 1 point.
+- Energy close to the user's target, add up to 1.5 points. Closer means more points.
+- Matches the acoustic preference, add half a point.
 
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+The energy rule is the important idea. It does not reward loud songs or quiet songs. It rewards songs that are close to the energy the user asked for. So being close is what earns points, not being high or low.
+
+Every point comes with a short reason, like "genre match" or "energy close to target". That way the user can see why a song was picked. The main change from the starter code was writing the scoring and ranking rules, which were empty at the start.
 
 ---
 
 ## 4. Data  
 
-Describe the dataset the model uses.  
+The catalog is a small CSV file with 18 songs. I started with 10 songs and added 8 more to get more variety.
 
-Prompts:  
+Each song has these features: id, title, artist, genre, mood, energy, tempo, valence, danceability, and acousticness. The model only uses genre, mood, energy, and acousticness for now.
 
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
+There are 15 genres and 14 moods. But most of them appear only once. Only lofi (3 songs) and pop (2 songs) show up more than once.
+
+A lot of real musical taste is missing. The catalog is tiny, it leans toward calm and electronic styles, and it has no lyrics, no language, and no info about song quality or popularity.
 
 ---
 
 ## 5. Strengths  
 
-Where does your system seem to work well  
+The system works well when the user's profile is clear and consistent. A chill lofi fan gets calm lofi songs. A rock fan gets loud rock songs. The top pick usually feels right.
 
-Prompts:  
+It captures the energy idea well. It matches songs to the energy the user wants, instead of just picking the loudest song.
 
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+It is easy to understand. Every pick comes with a reason, so you can always see why a song was chosen. It also fails safely. Even with a weird or empty profile, it still returns a ranked list instead of crashing.
 
 ---
 
@@ -91,23 +91,18 @@ Overall the tests told me the top pick is usually valid when a profile is consis
 
 ## 8. Future Work  
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+- Give partial credit for similar styles. Right now metal earns nothing for a rock fan. It should earn some points because the styles are close.
+- Use more features. The songs already have tempo, valence, and danceability, but the profile ignores them. Adding them would tell similar songs apart.
+- Grow and balance the catalog. More songs per genre would give every user more real matches, not just lofi and pop fans.
 
 ---
 
 ## 9. Personal Reflection  
 
-A few sentences about your experience.  
+My biggest learning moment was seeing that a recommender is just a scoring rule and a sort, and that the weights quietly decide everything.
 
-Prompts:  
+The AI tools helped me write and explain the code fast, but I had to double-check the math and the rankings myself, since I could not trust the output until I ran it.
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+What surprised me was how simple points and sorting can still feel like real recommendations, even with only a few rules.
+
+If I kept going, I would add more features like tempo and valence, give partial credit for similar genres, and grow the catalog so every user gets fair matches.
